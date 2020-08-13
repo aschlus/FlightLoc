@@ -9,6 +9,7 @@ class Location(val title: String, val flown: Boolean) {
             for (i in 1..numLocations) {
                 locations.add(Location("Test " + ++lastLocationId, i <= numLocations / 2))
             }
+            lastLocationId = 0
             return locations
         }
     }
