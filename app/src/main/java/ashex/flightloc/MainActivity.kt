@@ -45,4 +45,15 @@ class MainActivity : AppCompatActivity() {
         val homeFragment = HomeFragment.newInstance()
         openFragment(homeFragment)
     }
+
+    override fun onBackPressed() {
+        var currentFrag = supportFragmentManager.findFragmentById(R.id.container)
+        if (currentFrag is HomeFragment) {
+            finish()
+        }
+        else {
+            val homeFragment = HomeFragment.newInstance()
+            openFragment(homeFragment)
+        }
+    }
 }

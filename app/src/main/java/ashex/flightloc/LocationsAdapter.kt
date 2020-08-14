@@ -12,6 +12,7 @@ class LocationsAdapter (private val mLocations: List<Location>) : RecyclerView.A
 
     inner class ViewHolder(listItemView: View) : RecyclerView.ViewHolder(listItemView) {
         val titleTextView = itemView.findViewById<TextView>(R.id.location_title)
+        val townTextView = itemView.findViewById<TextView>(R.id.location_town)
         val flownButton = itemView.findViewById<Button>(R.id.flown_button)
     }
 
@@ -24,8 +25,10 @@ class LocationsAdapter (private val mLocations: List<Location>) : RecyclerView.A
 
     override fun onBindViewHolder(viewHolder: LocationsAdapter.ViewHolder, position: Int) {
         val location: Location = mLocations.get(position)
-        val textView = viewHolder.titleTextView
-        textView.setText(location.title)
+        val titleTextView = viewHolder.titleTextView
+        val townTextView = viewHolder.townTextView
+        titleTextView.setText(location.title)
+        townTextView.setText(location.town)
         val button = viewHolder.flownButton
         button.text = if (location.flown) "Flown" else "Unflown"
         button.isEnabled = false

@@ -1,13 +1,13 @@
 package ashex.flightloc
 
-class Location(val title: String, val flown: Boolean) {
+class Location(val title: String, val town: String, val flown: Boolean) {
 
     companion object {
         private var lastLocationId = 0
         fun createLocationList(numLocations: Int) : ArrayList<Location> {
             val locations = ArrayList<Location>()
             for (i in 1..numLocations) {
-                locations.add(Location("Test " + ++lastLocationId, i <= numLocations / 2))
+                locations.add(Location("Location " + ++lastLocationId, "Town " + lastLocationId, i <= numLocations / 2))
             }
             lastLocationId = 0
             return locations
