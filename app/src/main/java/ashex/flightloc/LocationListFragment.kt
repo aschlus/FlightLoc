@@ -14,12 +14,18 @@ import android.widget.ImageButton
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.firestore.CollectionReference
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import org.json.JSONObject
 import org.xml.sax.helpers.LocatorImpl
 import java.io.*
+import java.lang.Exception
 import java.lang.StringBuilder
 import java.nio.Buffer
 
@@ -29,6 +35,7 @@ class LocationListFragment : Fragment(), View.OnClickListener {
     lateinit var addBtn: Button
     lateinit var rvLocations: RecyclerView
     lateinit var adapter: LocationsAdapter
+    private var db = Firebase.firestore
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val rootView = inflater.inflate(R.layout.fragment_location_list, container, false)
@@ -41,44 +48,10 @@ class LocationListFragment : Fragment(), View.OnClickListener {
         addBtn = rootView.findViewById(R.id.button)
         addBtn.setOnClickListener(this)
 
-        val file = File(rootView.context.filesDir, "locations.json")
-
-        if (!file.exists())
-            Log.i("Result", "Need new file")
-        file.createNewFile()
-
-        val path = file.toString()
-
-        val sb = StringBuilder()
-        val reader = BufferedReader(FileReader(File(path)))
-        var line: String? = ""
-
-        do {
-            line = reader.readLine()
-            if (line == null)
-                break
-            //Log.i("Result", "Line: $line")
-            sb.append(line)
-        } while (true)
-        reader.close()
-
-        var stringJSON = sb.toString()
-
-        val gson = GsonBuilder().setPrettyPrinting().create()
-
-        var listLocation:List<Location> = listOf()
-
-        if (stringJSON.isNotEmpty()) {
-            listLocation = gson.fromJson(StringReader(stringJSON), Array<Location>::class.java).toList()
-        }
-
-        var alLocation = ArrayList(listLocation)
-
-        var curSize = adapter.itemCount
-        locations.addAll(alLocation.asReversed())
-        adapter.notifyItemRangeChanged(curSize, alLocation.size)
+        loadData()
 
         return rootView
+
     }
 
     override fun onClick(v: View) {
@@ -86,13 +59,13 @@ class LocationListFragment : Fragment(), View.OnClickListener {
     }
 
     private fun newLocDialog(v: View) {
-        var dialog = Dialog(v.context)
+        val dialog = Dialog(v.context)
         dialog.setContentView(R.layout.dialog_location)
         dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
         dialog.setCancelable(true)
 
-        var cancelBtn: ImageButton = dialog.findViewById(R.id.cancelBtn)
-        var checkBtn: ImageButton = dialog.findViewById(R.id.checkBtn)
+        val cancelBtn: ImageButton = dialog.findViewById(R.id.cancelBtn)
+        val checkBtn: ImageButton = dialog.findViewById(R.id.checkBtn)
 
         cancelBtn.setOnClickListener {
             dialog.dismiss()
@@ -101,55 +74,50 @@ class LocationListFragment : Fragment(), View.OnClickListener {
             val title: String = dialog.findViewById<EditText>(R.id.titleEdit).text.toString()
             val town: String = dialog.findViewById<EditText>(R.id.townEdit).text.toString()
 
-            val file = File(v.context.filesDir, "locations.json")
+            val newLocFire = hashMapOf(
+                "added" to System.currentTimeMillis(),
+                "title" to title,
+                "town" to town
+            )
 
-            val path = file.toString()
+            db.collection("locations")
+                .add(newLocFire)
+                .addOnSuccessListener { documentReference ->
+                    Log.d("Firebase", "DocumentSnapshot added with ID: ${documentReference.id}")
+                    locations.add(0, Location(title, town, false))
+                    adapter.notifyItemInserted(0)
+                    rvLocations.scrollToPosition(0)
+                }
+                .addOnFailureListener { e ->
+                    Log.w("Firebase", "Error adding document", e)
+                }
 
-            val sb = StringBuilder()
-            val reader = BufferedReader(FileReader(File(path)))
-            var line: String? = ""
-
-            do {
-                line = reader.readLine()
-                if (line == null)
-                    break
-                //Log.i("Result", "Line: $line")
-                sb.append(line)
-            } while (true)
-            reader.close()
-
-            var stringJSON = sb.toString()
-            //Log.i("Result", "String: $stringJSON, Len: ${stringJSON.length}")
-
-            val gson = GsonBuilder().setPrettyPrinting().create()
-
-            var listLocation:List<Location> = listOf()
-
-            if (stringJSON.isNotEmpty()) {
-                listLocation = gson.fromJson(StringReader(stringJSON), Array<Location>::class.java).toList()
-            }
-
-            var alLocation = ArrayList(listLocation)
-
-            val newLoc = Location(title, town, false)
-            alLocation.add(newLoc)
-            val newJSON = gson.toJson(alLocation)
-
-            //Log.i("Result", "Final: $newJSON")
-
-            val writer = FileWriter(file)
-            writer.write(newJSON)
-            writer.flush()
-            writer.close()
-
-            locations.add(0, newLoc)
-            adapter.notifyItemInserted(0)
-            rvLocations.scrollToPosition(0)
             dialog.dismiss()
         }
 
         dialog.show()
 
+    }
+
+    private fun loadData(){
+        val test: MutableList<Location> = arrayListOf()
+
+        db.collection("locations").orderBy("added", Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener { result ->
+                for (document in result) {
+                    Log.d("Firebase", "${document.id} => ${document.data}")
+                    test.add(0, Location(document.get("title") as String,
+                        document.get("town") as String, false))
+                }
+                Log.d("Firebase", "AL => $test")
+                locations.addAll(test.asReversed())
+                adapter.notifyItemRangeChanged(adapter.itemCount, test.size)
+
+            }
+            .addOnFailureListener { exception ->
+                Log.d("Firebase", "Error getting documents: ", exception)
+            }
     }
 
     companion object {
