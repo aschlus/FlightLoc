@@ -3,7 +3,6 @@ package ashex.flightloc
 import android.app.Dialog
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.util.JsonReader
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -14,20 +13,10 @@ import android.widget.ImageButton
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.database.DatabaseReference
-import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.reflect.TypeToken
-import org.json.JSONObject
-import org.xml.sax.helpers.LocatorImpl
-import java.io.*
-import java.lang.Exception
-import java.lang.StringBuilder
-import java.nio.Buffer
+
 
 class LocationListFragment : Fragment(), View.OnClickListener {
 
